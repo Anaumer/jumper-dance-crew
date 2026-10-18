@@ -8,8 +8,8 @@ animation.
 
 | | Video | What it shows |
 |---|---|---|
-| **B-Boy Battle** | [YouTube](LINK-YOUTUBE) | two crabs, uprocks, claw fist bump, barrel roll, cartwheel, one-claw freeze, backspin on the shell, half-circle "courtship" dancing round the rival |
-| **Tango Crab** | [X](LINK-X) | abrazo, caminata, ochos, boleo, abrupt sideways crab runs, golpecitos, corte y quebrada |
+| **B-Boy Battle** | [YouTube](https://www.youtube.com/watch?v=1j4DzeQWZX4) | two crabs, uprocks, claw fist bump, barrel roll, cartwheel, one-claw freeze, backspin on the shell, half-circle "courtship" dancing round the rival |
+| **Tango Crab** | [X](https://x.com/V_Racho/status/2111817516326535656) | abrazo, caminata, ochos, boleo, abrupt sideways crab runs, golpecitos, corte y quebrada |
 
 ## What is in here
 
