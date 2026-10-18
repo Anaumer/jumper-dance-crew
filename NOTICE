@@ -1,0 +1,6 @@
+Jumper Dance Crew
+
+This project builds on KingKongRobotics/jumper (Apache License 2.0),
+https://github.com/KingKongRobotics/jumper. The task configurations in jumper-tasks/ started as
+copies of that framework's dance tasks and are used with its environment, robot model and
+locomotion policy.
