@@ -1,27 +1,25 @@
 # Jumper Dance Crew 🦀
 
-A b-boy battle, a tango and a ballet for the **Tiao Tiao Jumper** crab robot
+A b-boy battle (and a ballet) for the **Tiao Tiao Jumper** crab robot
 ([KingKongRobotics/jumper](https://github.com/KingKongRobotics/jumper), 22 DoF), made for the
-*Crab Robot Open-source Challenge 2026*. Everything you see in the videos is **physics simulation
+*Crab Robot Open-source Challenge 2026*. Everything you see in the video is **physics simulation
 in MuJoCo** with the open-source Jumper model and the real servo's torque/speed curve, not
 animation.
 
 | | Video | What it shows |
 |---|---|---|
 | **B-Boy Battle** | [YouTube](https://www.youtube.com/watch?v=1j4DzeQWZX4) | two crabs, uprocks, claw fist bump, barrel roll, cartwheel, one-claw freeze, backspin on the shell, half-circle "courtship" dancing round the rival |
-| **Tango Crab** | [X](https://x.com/V_Racho/status/2111817516326535656) | abrazo, caminata, ochos, boleo, abrupt sideways crab runs, golpecitos, corte y quebrada |
 
 ## What is in here
 
 ```
-jumper-tasks/     four imitation tasks for the jumper framework + install.py
-  dance_tango/      keyframed tango solo (47 s clip incl. a standing pad)
+jumper-tasks/     three imitation tasks for the jumper framework + install.py
   battle_gestures/  bob, overhead applause, covering the eyes, pinch, uprock
   freeze/           one-claw freeze: simulated entry, held pose, landing
   dance_ballerina/  ballet with a two-leg arabesque and a pirouette
 policies/         the trained PPO checkpoints (rsl_rl, warm-started from one another)
-choreo/           keyframe -> clip generators (IK-planted feet, CoM pull, tripod stepping that
-                  walks and turns, one rear leg at a time) and the three choreographies
+choreo/           keyframe -> clip generators (IK-planted feet, CoM pull, tripod turns) and
+                  the battle and ballet choreographies
 probes/           physics search and composition:
   roll_search.py, move_search.py   evolutionary search of open-loop moves (barrel roll, cartwheel,
                                    freeze entry) against the measured servo curve
@@ -29,10 +27,10 @@ probes/           physics search and composition:
                                    flip back up -- one continuous simulation
   loco.py          drives the locomotion policy that ships with jumper (ONNX) from Python
   battle3.py       the battle: two timelines, closed-loop gaze, half-circle orbits, music grid
-  battle_render.py, tango_render.py, ballet_render.py   video rendering
+  battle_render.py, ballet_render.py   video rendering
   clean_poses.py, self_pen.py, battle_contacts.py, battle_check.py   checks (see below)
-skins/tools/      paint-only skins (camo, black stripes, tango with lips/lashes/rose, ballerina,
-                  Swiss, China ...) for the jumper-design pipeline
+skins/tools/      paint-only skins (camo, black stripes, ballerina, Swiss, China ...) for the
+                  jumper-design pipeline
 ```
 
 ## How it works
@@ -42,7 +40,7 @@ skins/tools/      paint-only skins (camo, black stripes, tango with lips/lashes/
 1. **Imitation policies** (PPO, the framework's BeyondMimic-style dance tracking): a choreography
    is written as keyframes (`choreo/choreography_*.py`), turned into a kinematically consistent
    clip with IK-planted feet (`choreo/generate*.py`), and a policy learns to perform it in
-   simulation with pushes and noise. Battle gestures, freeze, tango and ballet are such policies.
+   simulation with pushes and noise. Battle gestures, freeze and ballet are such policies.
 2. **Open-loop physics moves** found by an evolution strategy over keyframe schedules
    (`probes/move_search.py`, `headspin_search.py`): barrel roll, cartwheel, backspin. Whatever
    wins is by construction something the simulated robot can do. The key idea for the rolls was
@@ -71,7 +69,6 @@ of the track (measured: 90.0 BPM, drop at 10.04 s).
 | | |
 |---|---|
 | freeze | 1.44 s standing on the opened left claw alone (1.60 s with small hops), lands on all fours |
-| tango | base within ~1.5 cm of the reference through walks, ochos and the 14 cm sideways runs; boleo lifts the leg 82 mm; the quebrada holds a 62 mm leg extension to the end |
 | battle gestures | yaw drift below 1.5 degrees over pinch, applause and covering the eyes |
 | backspin | ~3.8 turns in about 2 s on the shell at the model's own friction, flip back to standing |
 | ballet | two-leg arabesque held 2.2 s, a 337-degree pirouette |
@@ -87,11 +84,11 @@ cd jumper && pip install -e ".[dev]" && cd ..      # see jumper's docs/AGENT_SET
 
 # replay a policy (writes the qpos sequence and per-limb clearances)
 cd probes
-python eval_task.py ../policies/dance_tango_model_12949.pt tango_replay.npz 1450 jumper.dance_tango
+python eval_task.py ../policies/battle_gestures_model_14047.pt gestures_replay.npz 1679 jumper.battle_gestures
 
 # train further (GPU: --backend warp; on a Mac: --backend native --device cpu)
-cd ../jumper && python scripts/train.py --task jumper.dance_tango --num_envs 4096 \
-    --resume --checkpoint ../policies/dance_tango_model_12949.pt --headless
+cd ../jumper && python scripts/train.py --task jumper.battle_gestures --num_envs 4096 \
+    --resume --checkpoint ../policies/battle_gestures_model_14047.pt --headless
 
 # compose and render the battle (needs the two skins built with skins/tools + jumper-design)
 cd ../probes
@@ -100,7 +97,7 @@ python battle_render.py battle.npz <camo skin xml> <stripes skin xml> battle.mp4
 ```
 
 Training ran on one rented NVIDIA A40 (about 1.6 s per PPO iteration with 4096 environments);
-all policies together cost roughly 6 USD of GPU time. The search scripts run on a laptop CPU.
+all policies together cost a few USD of GPU time. The search scripts run on a laptop CPU.
 
 ## Honest notes
 
@@ -109,12 +106,11 @@ all policies together cost roughly 6 USD of GPU time. The search scripts run on 
   not tested.
 - Segments of the battle are stitched with short cross-fades; within a segment every frame is
   simulated.
-- The tango uses the claws as front feet while stepping (as the robot's own tripod gait does).
 
 ## License and credits
 
 Code: Apache License 2.0, like the jumper framework it builds on (see `LICENSE`). The task
-configs started as copies of jumper's own dance tasks. Music is **not** included: the videos use
-"Turn Back" by Ballpoint and "Cry for Me Again" by Sight of Wonders (Epidemic Sound).
+configs started as copies of jumper's own dance tasks. Music is **not** included: the video uses
+"Turn Back" by Ballpoint (Epidemic Sound).
 
 Made with Claude Code. #Jumper #CrabRobot #OpenSourceRobot

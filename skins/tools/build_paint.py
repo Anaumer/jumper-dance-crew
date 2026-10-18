@@ -5,7 +5,7 @@ face, so the surface is exactly the same) until no edge is longer than MAX_EDGE,
 gets a colour slot from the motif's painter, evaluated at the face centre in CAD millimetres
 (x = robot left, -y = robot front, z up). Limbs get per-link colours through visual overrides.
 
-usage: build_paint.py <motif>    motifs: graffiti, tracksuit, oldschool, neon, camo, camo_heavy, tracksuit3, tango
+usage: build_paint.py <motif>    motifs: graffiti, tracksuit, oldschool, neon, camo, camo_heavy, tracksuit3
 writes skins/crew/<motif>/work/{shell.stl, ams.3mf, visual-overrides.json}
 """
 import json
@@ -112,68 +112,7 @@ def tracksuit3_alt(c, n):
     return slot
 
 
-def tango(c, n):
-    """Tango: black, full red lips under the display, a red rose with two leaves on the left of the crown."""
-    slot = np.zeros(len(c), np.uint8)                       # 0 black
-    # red lips on the front strip under the display (the only paintable band there: the display
-    # cut-out spans x -50..50, z 40-68 mm, the shell's rim ends at z 32.5)
-    front = (c[:, 1] < -95) & (n[:, 1] < -0.3)
-    x, z = c[:, 0], c[:, 2]
-    w = 25.0                                                # half the mouth's width
-    u = np.clip(np.abs(x) / w, 0, 1)
-    mouth = 36.5 + 1.0 * u ** 2                             # the corners turned up a little
-    top = mouth + 3.6 * (1 - u ** 2) ** 0.45 - 1.3 * np.exp(-(x / 3.2) ** 2) \
-        + 0.6 * np.exp(-((np.abs(x) - 7.0) / 4.0) ** 2)    # cupid's bow
-    bottom = mouth - 4.6 * (1 - u ** 2) ** 0.4              # the fuller lower lip
-    lips = front & (np.abs(x) < w) & (z < top) & (z > bottom)
-    slot[lips] = 1
-    slot[lips & (np.abs(z - mouth) < 0.5)] = 2               # the line between them
-    slot[lips & (z < bottom + 0.7) & (u < 0.8)] = 2           # a shadow under the lower lip: volume
-    # eyelashes: crimson (black would vanish on the black shell) on the brow above the display,
-    # which slopes forward-up from the cut-out's top edge (y -83, z 68.5) to the crown (z 78.5)
-    brow = (c[:, 1] > -86) & (c[:, 1] < -68) & (z > 67.5) & (z < 79.5) & (n[:, 1] < -0.3) & (n[:, 2] > 0.3)
-    edge = 68.6 - 3.0 * (np.abs(x) / 50.0) ** 4             # the cut-out's top edge, measured
-    for side in (-1.0, 1.0):
-        cx = 24.0 * side                                     # one eye each side of the display
-        e = (x - cx) * side                                  # along the lid, + towards the outer corner
-        liner = brow & (np.abs(e) < 18) & (z > edge + 0.4) & (z < edge + 2.2 + np.clip((e - 8) / 10, 0, 1) * 2.0)
-        slot[liner] = 1
-        wing = brow & (e > 15) & (e < 24) & (np.abs(z - (edge + 1.6 + (e - 15) * 0.6)) < 0.9 - (e - 15) * 0.07)
-        slot[wing] = 1
-        for k, e0 in enumerate(np.linspace(-13, 13, 6)):
-            f = (e0 + 13) / 26                               # 0 inner .. 1 outer corner
-            L = 5.0 + 3.0 * f                                # longer towards the outer corner
-            tilt = np.radians(-10 + 45 * f)                  # fanning outwards
-            t = np.linspace(0, 1, 12)
-            px = cx + side * (e0 + np.sin(tilt) * L * t + 0.8 * f * t ** 2)
-            pz = 68.6 - 3.0 * (np.abs(cx + side * e0) / 50.0) ** 4 + 1.6 + np.cos(tilt) * L * t - 0.8 * t ** 2
-            d = np.min(np.hypot(x[:, None] - px[None, :], z[:, None] - pz[None, :]), axis=1)
-            slot[brow & (d < 0.6)] = 1
-    x0, y0 = 20.0, -4.0                                     # the rose (robot left, slightly front)
-    dx, dy = c[:, 0] - x0, c[:, 1] - y0
-    r, th = np.hypot(dx, dy), np.arctan2(dy, dx)
-    crown = c[:, 2] > 45
-    for (lx, ly, a) in ((-6.0, 20.0, 0.6), (46.0, 18.0, -0.7)):          # leaves first, under it
-        u = (c[:, 0] - lx) * np.cos(a) + (c[:, 1] - ly) * np.sin(a)
-        v = -(c[:, 0] - lx) * np.sin(a) + (c[:, 1] - ly) * np.cos(a)
-        slot[crown & ((u / 20.0) ** 2 + (v / 8.0) ** 2 < 1)] = 3
-    rose = crown & (r < 27.0)
-    slot[rose] = 1                                           # crimson petals ...
-    # ... with the dark spiral between them, tighter towards the centre
-    spiral = np.sin(th * 3 + r * 0.38) > 0.6
-    slot[rose & spiral & (r > 2.0)] = 2
-    return slot
-
-
 MOTIFS = {
-    # the lips sit on an 8 mm strip, the lashes are 0.8 mm strokes: both regions are refined (two
-    # more midpoint splits each, 0.8 mm edges), and 3.2 mm everywhere else keeps every colour part under
-    # MuJoCo's 200k faces
-    'tango': dict(paint=tango, palette=['#111111', '#C8102E', '#5E0012', '#2F6B2F'], max_edge=3.2,
-                  refine=[dict(x=(-30.0, 30.0), y=(-120.0, -92.0), z=(31.0, 42.0), levels=2),     # lips
-                          dict(x=(-48.0, 48.0), y=(-86.0, -68.0), z=(67.0, 79.5), levels=2,      # lashes,
-                               ny_max=-0.3, nz_min=0.3)],                                         # outer brow only
-                  limbs={'*': '#111111', 'tip': '#C8102E', 'base': '#111111', 'stripe': '#111111'}),
     'graffiti': dict(paint=graffiti, palette=['#F4F4F4', '#FF3D7F', '#2EC4FF', '#7A3CFF'],
                      limbs={'LF': '#FF3D7F', 'RF': '#2EC4FF', 'LM': '#FFD23F', 'RM': '#7CFF4F',
                             'LR': '#7A3CFF', 'RR': '#FF8C1A', 'base': '#F4F4F4'}),

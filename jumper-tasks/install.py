@@ -1,8 +1,8 @@
-"""Install this project's four tasks into a checkout of KingKongRobotics/jumper.
+"""Install this project's three tasks into a checkout of KingKongRobotics/jumper.
 
     python jumper-tasks/install.py <path/to/jumper>
 
-Copies jumper.dance_ballerina, jumper.dance_tango, jumper.battle_gestures and jumper.freeze into
+Copies jumper.dance_ballerina, jumper.battle_gestures and jumper.freeze into
 <jumper>/tasks/jumper/, adds the one import line each needs in tasks/__init__.py (a task that is
 not imported there silently does not exist), and lists them in NOT_LOCOMOTION in
 tests/test_task_parity.py (they are imitation tasks, not gait controls). Idempotent.
@@ -11,7 +11,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TASKS = ("dance_ballerina", "dance_tango", "battle_gestures", "freeze")
+TASKS = ("dance_ballerina", "battle_gestures", "freeze")
 HERE = Path(__file__).resolve().parent
 
 
